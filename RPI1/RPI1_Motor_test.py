@@ -19,24 +19,24 @@ except ImportError:
 else:
     print ("Time module imported successfully")
 #END try-except
-def clockwise():
-    print("clockwise")
+def down():
+    print("down")
     GPIO.output(17, GPIO.HIGH) #set input 1 to logic high
     GPIO.output(27, GPIO.LOW) #set input 2 to logic low    
     
-    sleep(5)
+    sleep(10)
     
     #reset values to logic low
     GPIO.output(17, GPIO.LOW) 
     GPIO.output(27, GPIO.LOW)
 #END clockwise
 
-def counter_clockwise():
-    print("counter-clockwise")
+def up():
+    print("up")
     GPIO.output(17, GPIO.LOW) #set input 1 to logic low
     GPIO.output(27, GPIO.HIGH) #set input 2 to logic high
     
-    sleep(5)
+    sleep(10)
     
     #reset values to logic low
     GPIO.output(17, GPIO.LOW)
@@ -61,10 +61,11 @@ def Motor_test():
     
     #Enable motors
     GPIO.output(4, GPIO.HIGH)
-
-    clockwise()
-    counter_clockwise()
-
+    
+    up()
+    sleep(3)
+    down()
+    
     GPIO.cleanup() #resetting pins to defaults
 #END Motor_test
     
