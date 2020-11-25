@@ -1,3 +1,19 @@
+""""Raspberry Pi 1 test script
+
+This script will test all the device tasks, including communicating with ThingSpeak, and all peripheral devices.
+The overall purpose of this script is to calculate the lumenance of the area the Raspberry Pi is located in, send that data to a Thingspeak channel,
+then read values from a ThingSpeak channel and turn on a light or open blinds depending on those values.  
+
+This file can be imported as a module with the following functions:
+
+    *testing - this function runs test cases for the peripherals that have been imported from external files
+    *current_average_luma - this function captures an image via the Pi Camera and calculates the average lumenance of that image
+    *write_to_thingspeak - this function writes the average lumenance data from thingspeak
+    *search_for_nums - this function searches for the most recent input from a list of thingspeak data entries
+    *read_light_status_from_thingspeak - this function searches for the most recent entry in the light status field of a thingspeak channel
+    *read_blinds_status_from_thingspeak - this function searches for the most recent entry in the blinds status field of a thingspeak channel
+"""
+
 import urllib.request
 import requests
 from PIL import Image
@@ -9,6 +25,7 @@ import RPI1_PiCam_test
 import RPI1_Motor_test
 
 def testing():
+    """This function runs test cases for the peripherals that have been imported from external files"""
     RPI1_LED_test.LED_test()
     sleep(1)
     RPI1_PiCam_test.PiCam_test()
@@ -20,10 +37,11 @@ def testing():
 #END testing 
     
 def current_average_luma(camera):
+    """This function captures an image via the Pi Camera and calculates the average lumenance of that image"""
     camera.capture('/home/pi/Desktop/image1.jpg')#camera take picture
     img = Image.open("/home/pi/Desktop/image1.jpg") #opens image
     
-    luma=0 #sum of the luma of each pixels
+    luma=0 #sum of the lumenance of each pixels
     pixels = img.width*img.height #number of pixels
     
     for x in range(img.width):
@@ -38,6 +56,7 @@ def current_average_luma(camera):
 #END average_luma
 
 def write_to_thingspeak(luma):
+    """This function writes the average lumenance data from thingspeak"""
     URl='https://api.thingspeak.com/update?api_key='
     KEY='VDHAE4N7ZXBU5P5K'
     HEADER='&field1={}'.format(luma)
@@ -53,6 +72,7 @@ def write_to_thingspeak(luma):
 #END sent_to_thingspeak
     
 def search_for_nums(data):
+    """This function searches for the most recent input from a list of thingspeak data entries"""
     index = None
     for i in range(len(data)-1,0, -1): #count backwards through the loop
         if data[i] != None: #found most recent input
@@ -64,6 +84,7 @@ def search_for_nums(data):
 #end search_for_nums
 
 def read_light_status_from_thingspeak():
+    """This function searches for the most recent entry in the light status field of a thingspeak channel"""
     results = 1
     URL='https://api.thingspeak.com/channels/1152832/feeds.json?api_key='
     KEY='4DDGV289MS3GJCBY'
@@ -107,6 +128,7 @@ def read_light_status_from_thingspeak():
 #END read_light_status_from_thingspeak
 
 def read_blinds_status_from_thingspeak():
+    """This function searches for the most recent entry in the blinds status field of a thingspeak channel"""
     results = 1
     URL='https://api.thingspeak.com/channels/1152832/feeds.json?api_key='
     KEY='4DDGV289MS3GJCBY'
@@ -134,11 +156,11 @@ def read_blinds_status_from_thingspeak():
                 print("missing data point")
                 results += 1
                 
-                if prev_len_data == len(data):
-                    print ("No data points currently exist")
+                if prev_len_data == len(data): #if the list of data previously collected is the same as the current
+                    print ("No data points currently exist") #all current available data has been exhausted.  Move on
                     return
                 else: 
-                    prev_len_data = len(data)
+                    prev_len_data = len(data) #there are more points available.  try again.
                 #END if
             #END if
         except:
@@ -148,7 +170,7 @@ def read_blinds_status_from_thingspeak():
 #END read_blinds_status_from_thingspeak
             
 #MAIN
-#testing()            
+testing() #calls initial test cases          
             
 camera = PiCamera() #setting the camera object
 camera.resolution = (64, 64) #set resolution (keep as small as possible to avoid lengthy calculations

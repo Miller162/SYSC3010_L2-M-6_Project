@@ -1,3 +1,14 @@
+""""Raspberry Pi Camera test script
+
+This script tests that all necessary libraries to properly utilize the Pi Camera are able to be imported successfully.
+It will then run a test case that causes the camera to take a picture and then use the image processing library to calculate the average relative lumenance.
+This test case is outlined further in the test function docstring
+
+This file can be imported as a module with the following functions:
+
+    *PiCam_test - this function performs the afformentioned tests on the Pi Camera setup and implementation
+"""
+
 #TESTING import statements
 try:
     import picamera
@@ -23,6 +34,13 @@ else:
     
 #TESTING PiCamera
 def PiCam_test():
+    """A function that runs various tests on the initiialization and implementation of the external Raspberry Pi Camera
+
+    This function tests the Pi Camera initialization, and runs a scrip that causes it to capture an image and save it to the designated location.
+    It then tests the image processing library by causing it to load that image and calculate the average relative lumenance of the image.
+    Both of these tests can produce multiple different kinds of errors, most of which will be captured and properly identified by this test case.
+    """
+    
     try:
         WIDTH = 64 #width for picture capture
         HEIGHT = 64 #height for picture capture
@@ -51,7 +69,7 @@ def PiCam_test():
         luma=0 #sum of the luma of each pixels
         pixels = img.width*img.height #number of pixels in the picture
         
-        if (pixels != WIDTH*HEIGHT): #if the expected number of pixels match the actual
+        if (pixels != WIDTH*HEIGHT): #if the expected number of pixels match the actual (same as comparing expected height and width of the image
             print("Expected width and height do not match actual")
         #END if
             
@@ -75,4 +93,4 @@ def PiCam_test():
     #END try-except
 #END PiCam_test   
 
-#PiCam_test()
+#PiCam_test() #for use when run as an individual file. commented out when in use as an importable library in main test file
