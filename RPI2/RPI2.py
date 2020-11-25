@@ -15,16 +15,17 @@ blue = (0, 0, 255)
 
 # While-loop to allow for multiple data points
 while (1):
+
     sense = SenseHat()
     sense.clear()
 
     pressure = sense.get_pressure()
     print("Pressure: ", pressure, "millibars")
     
-    cpuTemp = CPUTemperature()
+    cpuTemp = int(open('/sys/class/thermal/thermal_zone0/temp').read())
     #print(cpuTemp)
     temp = sense.get_temperature_from_pressure()
-    temp = temp/1.5
+    temp = temp - ((cpuTemp-temp)/1.5)
     print("Temperature: ", temp, " Celcius")
 
     humidity = sense.get_humidity()
