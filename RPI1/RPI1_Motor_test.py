@@ -79,10 +79,10 @@ def motor_test():
 
     #Enable H-bridge output
     GPIO.output(4, GPIO.HIGH)
-
-    up(10.5)
+    
+    up(10)
     sleep(3)
-    down(10.5)
+    down(10)
 
     GPIO.cleanup() #resetting pins to defaults
     print("Motor test program run successfully \n")

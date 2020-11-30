@@ -6,6 +6,7 @@ then read values from a ThingSpeak channel and turn on a light or open blinds de
 
 This file can be imported as a module with the following functions:
 
+    *debug - A function that allows for easy printing of statements for debugging
     *testing - A function that runs test cases for the peripherals that have been imported from external files
     *current_average_luma - A function that captures an image via the Pi Camera and calculates the average lumenance of that image
     *write_to_thingspeak - A function that writes the average lumenance data from ThingSpeak
@@ -20,7 +21,6 @@ This file can be imported as a module with the following functions:
     *motor_init - A function that initializes the motor GPIO pins
     *camera_init - A function that initializes a global camera object
     *peripherals_init - A function that calls the initlization functions of the peripheral devices
-    *debug - A function that allows for easy printing of statements for debugging
     *LED_on - A fucntion that turns the LED on
     *LED_of - A fucntion that turns the LED off
     *check_light - A fucntion that checks if there has been a change in the light_status variable, and if so calls the appropriate functions to perform the desired action
@@ -251,19 +251,19 @@ def read_from_thingspeak(URL, KEY, FIELD, name):
 
 def read_light_status_from_thingspeak():
     """A function that searches for the most recent entry in the light status field of a thingspeak channel"""
-    URL='https://api.thingspeak.com/channels/1152832/feeds.json?api_key='
-    KEY='4DDGV289MS3GJCBY'
+    URL='https://api.thingspeak.com/channels/1153034/feeds.json?api_key='
+    KEY='GAMCQ1Z7S3JQJH3I'
 
-    return read_from_thingspeak(URL, KEY, "field2", "light_status")
+    return read_from_thingspeak(URL, KEY, "field1", "light_status")
 #END read_light_status_from_thingspeak
 
 
 def read_blinds_status_from_thingspeak():
     """A function that searches for the most recent entry in the blinds status field of a thingspeak channel"""
-    URL='https://api.thingspeak.com/channels/1152832/feeds.json?api_key='
-    KEY='4DDGV289MS3GJCBY'
+    URL='https://api.thingspeak.com/channels/1153034/feeds.json?api_key='
+    KEY='GAMCQ1Z7S3JQJH3I'
 
-    return read_from_thingspeak(URL, KEY, "field3", "blinds_status")
+    return read_from_thingspeak(URL, KEY, "field2", "blinds_status")
 #END read_blinds_status_from_thingspeak
 
 
@@ -274,7 +274,7 @@ def motor_up(time, lock):
         Param lock: a locking mutex
     """
     lock.acquire() #lock process
-    debug("motor up")
+    debug("Motor up")
     GPIO.output(17, GPIO.LOW) #set input 1 to logic low
     GPIO.output(27, GPIO.HIGH) #set input 2 to logic high
 
@@ -292,7 +292,7 @@ def motor_down(time, lock):
         Param lock: a locking mutex
     """
     lock.acquire() #lock process
-    debug("motor down")
+    debug("Motor down")
     GPIO.output(17, GPIO.HIGH) #set input 1 to logic high
     GPIO.output(27, GPIO.LOW) #set input 2 to logic low
 
@@ -347,18 +347,20 @@ def peripherals_init():
 
 def LED_on():
     """A fucntion that turns the LED on"""
+    debug("LED on")
     GPIO.output(18, GPIO.HIGH) #Turn on LED
 #END LED_on
 
 
 def LED_off():
     """A fucntion that turns the LED off"""
+    debug("LED off")
     GPIO.output(18, GPIO.LOW) #Turn off LED
 #END LED_off
 
 
 def check_light (light_status):
-    """A fucntion that checks if there has been a change in the light_status variable, and if so calls the appropriate functions to perform the desired action
+    """A function that checks if there has been a change in the light_status variable, and if so calls the appropriate functions to perform the desired action
 
         Param light_status: the desired status of the light
     """
@@ -379,13 +381,15 @@ def check_blinds(blinds_status, motor_lock):
         Param blinds_status: the desired status of the blinds
         Param motor_lock: a lock object for the motor (python equivalent of a mutex)
     """
-    time = 10.5 #time to run the motor for
+    time = 10 #time to run the motor for
     if not (check_blinds.prev_blinds_status == blinds_status): #if the value has changed
         check_blinds.prev_blinds_status = blinds_status #update the value for record
         if (blinds_status == 1): #open blinds
+            debug("Calling motor_up")
             up = Thread(target=motor_up, args = (time, motor_lock), daemon = False) #create thread object
             up.start() #start thread
         elif (blinds_status == 0): #close blinds
+            debug("Calling motor_down")
             down = Thread(target=motor_down, args = (time, motor_lock), daemon = False) #create thread object
             down.start() #start thread
         #END if
