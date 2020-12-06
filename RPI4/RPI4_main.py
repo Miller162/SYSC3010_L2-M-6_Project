@@ -1,7 +1,8 @@
 """
 This code reads data from all the ThingSpeak channels and sorts
 it into lists, it then placed the data in a database and calls
-other programs for the GUI and the LED display on the SenseHat
+other programs for the GUI and the LED display on the SenseHat.
+Additionally, it sends out email notifications.
 """
 try:
     import urllib.request
@@ -48,6 +49,15 @@ except:
 
 #DEBUG: set to True to enable debug functionality
 debugFlag = False
+
+#stops multiple emails from being sent
+#flag for temp warning
+global emailFlagValue1
+emailFlagValue1 = 0
+
+#flag for seismic warning
+global emailFlagValue2
+emailFlagValue2 = 0 
 
 #Channel names
 nameA1 = "Channel L2-M-6A1"
@@ -201,8 +211,12 @@ def checkEntryInput(prompt, usrChannel):
 
 #used to make sending email notifications easier
 def email_update(email_obj, recipient, channel):
+    global emailFlagValue1
+    global emailFlagValue2
     temp_str =  ""
     gyro_str = ""
+    highestRecord1 = 0
+    highestRecord2 = 0
     #details for temperature
     subject_temp = "WARNING: High Temperature"
     message_temp = "The current temperature in the house exceeds the set threshold. User action is required."   
@@ -212,15 +226,19 @@ def email_update(email_obj, recipient, channel):
     cursor.execute("SELECT * FROM %s ORDER BY tsid DESC LIMIT 1" %channel.table)
     for row in cursor:
         temp_str = row["temperature"]
+        highestRecord1 = int(row["tsid"])
     print("Current temp: ", temp_str)
     temp = int(temp_str)
-    if temp >= 30:
+    if temp >= 30 and highestRecord1 > emailFlagValue1:
+        emailFlagValue1 = highestRecord1
         email_obj.notifyUser(recipient, subject_temp, message_temp)
     cursor.execute("SELECT * FROM %s ORDER BY tsid DESC LIMIT 1" %channel.table)
     for row in cursor:
         gyro_str = row["gyroscope"]
+        highestRecord2 = int(row["tsid"])
     print("Seismic activity: ", gyro_str)
-    if gyro_str != "Undetected":
+    if gyro_str != "Undetected" and highestRecord2 > emailFlagValue2:
+        emailFlagValue2 = highestRecord2
         email_obj.notifyUser(recipient, subject_gyro, message_gyro)    
             
 #DEBUG testing method
@@ -373,9 +391,6 @@ if __name__ == "__main__":
     email_obj = emailAlert.EmailNotification()
     recipient = RPI4_GUI3.get_email_input()
     print("recipient: ", recipient)
-    subject = "WARNING: High Temperature"
-    message = "The current temperature in the house exceeds the set threshold. User action is required."
-    #email_obj.notifyUser(recipient, subject, message)
     
     while True:
         print("radio select value: ", RPI4_GUI3.radio_select_value())
