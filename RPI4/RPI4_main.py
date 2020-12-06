@@ -106,10 +106,10 @@ sizeC1 = 4
 sizeD2 = 4
 
 #database table arguments (used to simplify insertions later; make the code more modular)
-argA1 = "(dateTime, tsid, lightLevel) VALUES(?, ?, ?)" #"(dateTime, tsid, lightLevel, lightStatus, blindStatus) VALUES(?, ?, ?, ?, ?)"
-argB1 = "(dateTime, tsid, temperature, pressure, humidity, gyroscope) VALUES(?, ?, ?, ?, ?, ?)" #gyroscope update: remove for now
+argA1 = "(dateTime, tsid, lightLevel) VALUES(?, ?, ?)"
+argB1 = "(dateTime, tsid, temperature, pressure, humidity, gyroscope) VALUES(?, ?, ?, ?, ?, ?)"
 argC1 = "(dateTime, tsid, lightStatus, blindStatus) VALUES(?, ?, ?, ?)"
-argD2 = "(dateTime, tsid, windSpeed, windDirection) VALUES(?, ?, ?, ?)" #updated: removed averageWindSpeed
+argD2 = "(dateTime, tsid, windSpeed, windDirection) VALUES(?, ?, ?, ?)"
 
 #Database connection setup
 try:
@@ -121,9 +121,9 @@ except:
 
 #Database table setup
 try:
-    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI1_log (dateTime TEXT, tsid NUMERIC, lightLevel NUMERIC)")#, lightStatus BOOLEAN, blindStatus BOOLEAN)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI1_log (dateTime TEXT, tsid NUMERIC, lightLevel NUMERIC)")
     cursor.execute("CREATE TABLE IF NOT EXISTS  RPI2_log (dateTime TEXT, tsid NUMERIC, temperature NUMERIC, pressure NUMERIC, humidity NUMERIC, gyroscope TEXT)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI3_log (dateTime TEXT, tsid NUMERIC, windSpeed NUMERIC, windDirection TEXT)") #, averageWindSpeed NUMERIC)") #IMPORTANT: confirm consistency across thingspeak
+    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI3_log (dateTime TEXT, tsid NUMERIC, windSpeed NUMERIC, windDirection TEXT)") 
     cursor.execute("CREATE TABLE IF NOT EXISTS  RPI4_log (dateTime TEXT, tsid NUMERIC, lightStatus BOOLEAN, blindStatus BOOLEAN)")
     dbconnect.commit()
 except:
@@ -276,9 +276,6 @@ class Channel:
         
         self.data = requests.get(self.readUrl).json()
         self.lastEntryId = self.data['channel']["last_entry_id"]
-        #self.channelId = self.data['channel']['id']
-        #print(self.cid)
-        #print(self.channelId)
         self.feeds = self.data["feeds"]
         
         #initialize field lists
