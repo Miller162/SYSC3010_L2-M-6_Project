@@ -200,14 +200,28 @@ def checkEntryInput(prompt, usrChannel):
             good = False
 
 #used to make sending email notifications easier
-def email_update(email_obj, recipient, subject, message, channel):
+def email_update(email_obj, recipient, channel):
+    temp_str =  ""
+    gyro_str = ""
+    #details for temperature
+    subject_temp = "WARNING: High Temperature"
+    message_temp = "The current temperature in the house exceeds the set threshold. User action is required."   
+    #details for seismic activity
+    subject_gyro = "WARNING: Seismic Activity"
+    message_gyro = "Seismic activity has been detected. User action is required."      
     cursor.execute("SELECT * FROM %s ORDER BY tsid DESC LIMIT 1" %channel.table)
     for row in cursor:
         temp_str = row["temperature"]
-    print(temp_str)
+    print("Current temp: ", temp_str)
     temp = int(temp_str)
     if temp >= 30:
-        email_obj.notifyUser(recipient, subject, message)
+        email_obj.notifyUser(recipient, subject_temp, message_temp)
+    cursor.execute("SELECT * FROM %s ORDER BY tsid DESC LIMIT 1" %channel.table)
+    for row in cursor:
+        gyro_str = row["gyroscope"]
+    print("Seismic activity: ", gyro_str)
+    if gyro_str != "Undetected":
+        email_obj.notifyUser(recipient, subject_gyro, message_gyro)    
             
 #DEBUG testing method
 def debug(channel):
@@ -358,6 +372,7 @@ if __name__ == "__main__":
     #setup email notifications
     email_obj = emailAlert.EmailNotification()
     recipient = RPI4_GUI3.get_email_input()
+    print("recipient: ", recipient)
     subject = "WARNING: High Temperature"
     message = "The current temperature in the house exceeds the set threshold. User action is required."
     #email_obj.notifyUser(recipient, subject, message)
@@ -378,7 +393,7 @@ if __name__ == "__main__":
         update(channelB1)
         update(channelC1)
         update(channelD2)
-        email_update(email_obj, recipient, subject, message, channelB1)
+        email_update(email_obj, recipient, channelB1)
         print("---------------------------------------------------")
         sleep(4)
     dbClose() #this line won't be reached but it's a good reminder to close files

@@ -12,7 +12,7 @@ user_input = 85
 
 global email_input
 #in case no email is entered, use default email
-email_input = "hemas.assistant@gmail.com"
+#email_input = "hemas.assistant@gmail.com"
 
 try:
     dbconnect = sqlite3.connect("database.db")
@@ -25,33 +25,37 @@ except:
 #create functions
 def get_input():
     global user_input
-    return user_input
+    return int(user_input)
 
 def get_email_input():
     global email_input
-    return email_input
+    return str(email_input.get())
 
 def retrieve_input():
     global user_input
-    global email_input
-
     light_input_str = light_input.get()
     user_input = int(light_input_str)
     #print(light_input_str)
-    
-    email_input_str = email_input.get()
-    #print(email_input_str)    
-    
+        
     show_value = Toplevel(app)
     show_value.title("Saved value")
     view_frame = Frame(show_value)
     saved_text = Text(view_frame)
     
-    saved_text.insert(END, "Light threshold value saved: %s" %light_input_str)
-    saved_text.insert(END, "\nEmail address saved: %s" %email_input_str)
-    
+    saved_text.insert(END, "Light threshold value saved: %s" %light_input_str)    
     saved_text.pack()
     view_frame.pack()
+    
+def retrieve_email_input():
+    global email_input
+    email_input_str = email_input.get()
+    show_value = Toplevel(app)
+    show_value.title("Saved value")
+    view_frame = Frame(show_value)
+    saved_text = Text(view_frame)    
+    saved_text.insert(END, "\nEmail address saved: %s" %email_input_str)
+    saved_text.pack()
+    view_frame.pack()    
 
 def radio_select_value():
     if radio_select.get() == 1:
@@ -131,8 +135,8 @@ preference_description = Label(option_frame, text="Select the desired state for 
 preference_description.pack(side=TOP)
 
 #create the manual selection radio buttons
-manual_blind_preference_on = Radiobutton(option_frame, text="blinds: On", padx = 20, variable=radio_preference_blind, value=1, command=lambda:radio_preference_value_blind())
-manual_blind_preference_off = Radiobutton(option_frame, text="blinds: Off", padx = 20, variable=radio_preference_blind, value=2, command=lambda:radio_preference_value_blind())
+manual_blind_preference_on = Radiobutton(option_frame, text="blinds: Open", padx = 20, variable=radio_preference_blind, value=1, command=lambda:radio_preference_value_blind())
+manual_blind_preference_off = Radiobutton(option_frame, text="blinds: Closed", padx = 20, variable=radio_preference_blind, value=2, command=lambda:radio_preference_value_blind())
 manual_light_preference_on = Radiobutton(option_frame, text="lights: On", padx = 20, variable=radio_preference_light, value=1, command=lambda:radio_preference_value_light())
 manual_light_preference_off = Radiobutton(option_frame, text="lights: Off", padx = 20, variable=radio_preference_light, value=2, command=lambda:radio_preference_value_light())
 
@@ -147,6 +151,7 @@ light_label.pack(side=LEFT)
 
 #create the text entry field for the light level
 light_level_entry_box = Entry(option_frame, textvariable=light_input)
+light_level_entry_box.insert(0, "85")
 light_level_entry_box.pack(side=LEFT)
 
 #create a button to save the specified light threshold
@@ -162,10 +167,11 @@ email_description.pack(side=LEFT)
 
 #create the text entry field for the email
 email_entry_box = Entry(email_frame, textvariable=email_input)
+email_entry_box.insert(0, "hemas.assistant@gmail.com")
 email_entry_box.pack(side=LEFT)
 
 #create the button to save the email
-email_commit_button = Button(email_frame, text="Save email", command=lambda:retrieve_input())
+email_commit_button = Button(email_frame, text="Save email", command=lambda:retrieve_email_input())
 email_commit_button.pack(side=LEFT)
 
 
