@@ -1,12 +1,59 @@
-import urllib.request
-import requests
-import sqlite3
+"""
+This code reads data from all the ThingSpeak channels and sorts
+it into lists, it then placed the data in a database and calls
+other programs for the GUI and the LED display on the SenseHat
+"""
+try:
+    import urllib.request
+except:
+    print("could not import urllib.request")
+try:
+    import requests
+except:
+    print("could not import requests")
+try:
+    import sqlite3
+except:
+    print("could not import sqlite3")
+try:
+    from threading import Thread
+except:
+    print("could not import threading")
+try:
+    import RPI4_Final
+except:
+    print("could not import RPI4_Final")
+try:
+    import RPI4_GUI3
+except:
+    print("could not import RPI4_GUI3")
+try:   
+    import RPI4_Temp
+except:
+    print("could not import RPI4_Temp")
+try:
+    import emailAlert
+except:
+    print("could not import emailAlert")
+try:
+    from time import sleep
+except:
+    print("could not import time")
 
 #Group members:
 #A Miller, RPi1
 #B Gurjit, RPi2
 #C Eric,   RPi4
 #D Akkash, RPi3
+
+#DEBUG: set to True to enable debug functionality
+debugFlag = False
+
+#Channel names
+nameA1 = "Channel L2-M-6A1"
+nameB1 = "Channel L2-M-6B1"
+nameC1 = "Channel L2-M-6C1"
+nameD2 = "Channel L2-M-6D2"
 
 #Write API keys
 writeKeyA1 = "VDHAE4N7ZXBU5P5K"
@@ -28,10 +75,6 @@ idD2 = "1158485"
 
 #Write URLs
 writeUrl = "https://api.thingspeak.com/update?api_key="
-#writeUrlA1 = writeUrl + writeKeyA1
-#writeUrlB1 = writeUrl + writeKeyB1
-#writeUrlC1 = writeUrl + writeKeyC1
-#writeUrlD2 = writeUrl + writeKeyD2
 
 #read URLs
 readUrl = "https://api.thingspeak.com/channels/{}/feeds.json?api_key="
@@ -47,15 +90,15 @@ tableC1 = "RPI4_log"
 tableD2 = "RPI3_log"
 
 #database table sizes (number of columns)
-sizeA1 = 5
-sizeB1 = 5
-sizeC1 = 2
+sizeA1 = 3
+sizeB1 = 6
+sizeC1 = 4
 sizeD2 = 4
 
 #database table arguments (used to simplify insertions later; make the code more modular)
-argA1 = "(dateTime, tsid, lightLevel, lightStatus, blindStatus) VALUES(?, ?, ?, ?, ?)"
-argB1 = "(dateTime, tsid, temperature, pressure, humidity) VALUES(?, ?, ?, ?, ?)" #gyroscope update: remove for now
-argC1 = "(dateTime, cpuTemp) VALUES(?, ?)"
+argA1 = "(dateTime, tsid, lightLevel) VALUES(?, ?, ?)" #"(dateTime, tsid, lightLevel, lightStatus, blindStatus) VALUES(?, ?, ?, ?, ?)"
+argB1 = "(dateTime, tsid, temperature, pressure, humidity, gyroscope) VALUES(?, ?, ?, ?, ?, ?)" #gyroscope update: remove for now
+argC1 = "(dateTime, tsid, lightStatus, blindStatus) VALUES(?, ?, ?, ?)"
 argD2 = "(dateTime, tsid, windSpeed, windDirection) VALUES(?, ?, ?, ?)" #updated: removed averageWindSpeed
 
 #Database connection setup
@@ -68,10 +111,10 @@ except:
 
 #Database table setup
 try:
-    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI1_log (dateTime TEXT, tsid NUMERIC, lightLevel NUMERIC, lightStatus BOOLEAN, blindStatus BOOLEAN)")
-    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI2_log (dateTime TEXT, tsid NUMERIC, temperature NUMERIC, pressure NUMERIC, humidity NUMERIC)") #, gyroscope NUMERIC)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI1_log (dateTime TEXT, tsid NUMERIC, lightLevel NUMERIC)")#, lightStatus BOOLEAN, blindStatus BOOLEAN)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI2_log (dateTime TEXT, tsid NUMERIC, temperature NUMERIC, pressure NUMERIC, humidity NUMERIC, gyroscope TEXT)")
     cursor.execute("CREATE TABLE IF NOT EXISTS  RPI3_log (dateTime TEXT, tsid NUMERIC, windSpeed NUMERIC, windDirection TEXT)") #, averageWindSpeed NUMERIC)") #IMPORTANT: confirm consistency across thingspeak
-    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI4_log (date TEXT, time TEXT, cpuTemp NUMERIC)")
+    cursor.execute("CREATE TABLE IF NOT EXISTS  RPI4_log (dateTime TEXT, tsid NUMERIC, lightStatus BOOLEAN, blindStatus BOOLEAN)")
     dbconnect.commit()
 except:
     print("failure to establish database tables")
@@ -107,6 +150,20 @@ def dbClose():
         cursor.close()
         dbconnect.close()
 
+#update the database corresponding to a channel
+def update(channel):
+    checkHighestEntry(channel)
+    if channel.lastEntryId is None:
+        print("The ThingSpeak channel (%s) is cleared, nothing to write to database (table: %s)" %(channel.name, channel.table))
+    elif channel.dbHighestEntry > channel.lastEntryId:
+        print("The local database file (table: %s) is out of synch with ThingSpeak %s; the ThingSpeak channel was probably cleared without also resetting the database" %(channel.table, channel.name))
+        print("\n Recommendation: delete the database file; a new one will be created on the next execution")
+    else:
+        checkHighestEntry(channel)
+        print("Last Entry before updating database (%s, table: %s): %s" %(channel.name, channel.table, channel.dbHighestEntry))
+        writeToDatabase(channel)
+        checkHighestEntry(channel)
+        print("Last Entry after updating database (%s, table: %s): %s" %(channel.name, channel.table, channel.dbHighestEntry))    
 
 #define static channel methods
 def checkChannelInput(prompt):
@@ -142,9 +199,36 @@ def checkEntryInput(prompt, usrChannel):
             print("Entry " + str(entrySelect) + ": ", Channel.createEntryList(usrChannel, entrySelect-1))
             good = False
 
+#used to make sending email notifications easier
+def email_update(email_obj, recipient, subject, message, channel):
+    cursor.execute("SELECT * FROM %s ORDER BY tsid DESC LIMIT 1" %channel.table)
+    for row in cursor:
+        temp_str = row["temperature"]
+    print(temp_str)
+    temp = int(temp_str)
+    if temp >= 30:
+        email_obj.notifyUser(recipient, subject, message)
+            
+#DEBUG testing method
+def debug(channel):
+    print("Reading ThingSpeak %s" %channel.name)
+    print("read URL: ", channel.readUrl)
+    print("write URL: ", channel.writeUrl)
+    print("Last entry ID: ", channel.lastEntryId)
+    
+    print("field1List: ", channel.field1List)
+    print("field2List: ", channel.field2List)
+    print("field3List: ", channel.field3List)
+    print("field4List: ", channel.field4List)
+    print("field5List: ", channel.field5List)
+    print("field6List: ", channel.field6List)
+    print("field7List: ", channel.field7List)
+    print("field8List: ", channel.field8List)
+    print("---------------------------------------------------")    
+
 class Channel:
     #constructor method
-    def __init__(self, readUrl, writeUrl, readApiKey, writeApiKey, cid, table, arguments, tableSize):
+    def __init__(self, readUrl, writeUrl, readApiKey, writeApiKey, cid, table, arguments, tableSize, name):
         self.readUrl = readUrl + readApiKey
         self.writeUrl = writeUrl + writeApiKey
         self.readApiKey = readApiKey
@@ -154,6 +238,7 @@ class Channel:
         self.arguments = arguments
         self.tableSize = tableSize
         self.dbHighestEntry = 0
+        self.name = name
         
         self.data = requests.get(self.readUrl).json()
         self.lastEntryId = self.data['channel']["last_entry_id"]
@@ -179,12 +264,27 @@ class Channel:
                 value.append(i[fieldString])
             return value
         except KeyError:
-            print(fieldString, "is empty")
+            if debugFlag:
+                print(fieldString, "is empty")
         except:
-            print(fieldString, "is not empty but something went wrong")
+            if debugFlag:
+                print(fieldString, "is not empty but something went wrong")
     
     #populate field lists
     def createFieldLists(self):
+        #update the last entry id
+        self.data = requests.get(self.readUrl).json()
+        self.lastEntryId = self.data['channel']["last_entry_id"]
+        #clear field lists first
+        self.field1List = []
+        self.field2List = []
+        self.field3List = []
+        self.field4List = []
+        self.field5List = []
+        self.field6List = []
+        self.field7List = []
+        self.field8List = []     
+        #then populate the field lists
         self.field1List = self.readChannel(self.field1List, "field1")
         self.field2List = self.readChannel(self.field2List, "field2")
         self.field3List = self.readChannel(self.field3List, "field3")
@@ -221,107 +321,64 @@ class Channel:
 
 if __name__ == "__main__":
     
-    #Reading test, repetition will be resolved later via a function (hopefully)
-    channelA1 = Channel(readUrlA1, writeUrl, readKeyA1, writeKeyA1, idA1, tableA1, argA1, sizeA1)
-    print("Reading ThingSpeak Channel L2-M-6A1")
-    print("read URL: ", channelA1.readUrl)
-    print("write URL: ", channelA1.writeUrl)
-    print("Last entry ID: ", channelA1.lastEntryId)
-    
+    #Set up channel objects
+    channelA1 = Channel(readUrlA1, writeUrl, readKeyA1, writeKeyA1, idA1, tableA1, argA1, sizeA1, nameA1)
     Channel.createFieldLists(channelA1)
-    print("field1List: ", channelA1.field1List)
-    print("field2List: ", channelA1.field2List)
-    print("field3List: ", channelA1.field3List)
-    print("field4List: ", channelA1.field4List)
-    print("field5List: ", channelA1.field5List)
-    print("field6List: ", channelA1.field6List)
-    print("field7List: ", channelA1.field7List)
-    print("field8List: ", channelA1.field8List)
-    print("---------------------------------------------------")
-    
-    channelB1 = Channel(readUrlB1, writeUrl, readKeyB1, writeKeyB1, idB1, tableB1, argB1, sizeB1)
-    print("Reading ThingSpeak Channel L2-M-6B1")
-    print("read URL: ", channelB1.readUrl)
-    print("write URL: ", channelB1.writeUrl)
-    print("Last entry ID: ", channelB1.lastEntryId)
-    
-    Channel.createFieldLists(channelB1)
-    print("field1List: ", channelB1.field1List)
-    print("field2List: ", channelB1.field2List)
-    print("field3List: ", channelB1.field3List)
-    print("field4List: ", channelB1.field4List)
-    print("field5List: ", channelB1.field5List)
-    print("field6List: ", channelB1.field6List)
-    print("field7List: ", channelB1.field7List)
-    print("field8List: ", channelB1.field8List)
-    ##Create a list for one specific entry
-    #print("Entry 1: ", Channel.createEntryList(channelB1, 1))
-    print("---------------------------------------------------")
-    
-    channelC1 = Channel(readUrlC1, writeUrl, readKeyC1, writeKeyC1, idC1, tableC1, argC1, sizeC1)
-    print("Reading ThingSpeak Channel L2-M-6C1")
-    print("read URL: ", channelC1.readUrl)
-    print("write URL: ", channelC1.writeUrl)
-    print("Last entry ID: ", channelC1.lastEntryId)
-    
-    Channel.createFieldLists(channelC1)
-    print("field1List: ", channelC1.field1List)
-    print("field2List: ", channelC1.field2List)
-    print("field3List: ", channelC1.field3List)
-    print("field4List: ", channelC1.field4List)
-    print("field5List: ", channelC1.field5List)
-    print("field6List: ", channelC1.field6List)
-    print("field7List: ", channelC1.field7List)
-    print("field8List: ", channelC1.field8List)
-    print("---------------------------------------------------")
-    
-    channelD2 = Channel(readUrlD2, writeUrl, readKeyD2, writeKeyD2, idD2, tableD2, argD2, sizeD2)
-    print("Reading ThingSpeak Channel L2-M-6D2")
-    print("read URL: ", channelD2.readUrl)
-    print("write URL: ", channelD2.writeUrl)
-    print("Last entry ID: ", channelD2.lastEntryId)
-    
-    Channel.createFieldLists(channelD2)
-    print("field1List: ", channelD2.field1List)
-    print("field2List: ", channelD2.field2List)
-    print("field3List: ", channelD2.field3List)
-    print("field4List: ", channelD2.field4List)
-    print("field5List: ", channelD2.field5List)
-    print("field6List: ", channelD2.field6List)
-    print("field7List: ", channelD2.field7List)
-    print("field8List: ", channelD2.field8List)
-    print("---------------------------------------------------")
 
-    #testList = ['2020-11-20T23:04:13Z', 1, '25.171300439452835', None, None]        
-    #connection, cursor = dbConnect()
-    #createTables(connection)
-    #always check the databse entries first
-    checkHighestEntry(channelA1)
-    print("Last Entry before updating database (table: %s): %s" %(channelA1.table, channelA1.dbHighestEntry))
-    writeToDatabase(channelA1)
-    checkHighestEntry(channelA1)
-    print("Last Entry after updating database (table: %s): %s" %(channelA1.table, channelA1.dbHighestEntry))
+    channelB1 = Channel(readUrlB1, writeUrl, readKeyB1, writeKeyB1, idB1, tableB1, argB1, sizeB1, nameB1)
+    Channel.createFieldLists(channelB1)
     
-    checkHighestEntry(channelB1)
-    print("Last Entry before updating database (table: %s): %s" %(channelB1.table, channelB1.dbHighestEntry))
-    writeToDatabase(channelB1)
-    checkHighestEntry(channelB1)
-    print("Last Entry after updating database (table: %s): %s" %(channelB1.table, channelB1.dbHighestEntry))
+    channelC1 = Channel(readUrlC1, writeUrl, readKeyC1, writeKeyC1, idC1, tableC1, argC1, sizeC1, nameC1)
+    Channel.createFieldLists(channelC1)
     
-    checkHighestEntry(channelD2)
-    print("Last Entry before updating database (table: %s): %s" %(channelD2.table, channelD2.dbHighestEntry))
-    writeToDatabase(channelD2)
-    checkHighestEntry(channelD2)
-    print("Last Entry after updating database (table: %s): %s" %(channelD2.table, channelD2.dbHighestEntry))     
-    #writeToDatabase(channelB1)
-    #writeToDatabase(channelA1, channelA1.table)
-    #writeToDatabase(channelA1, channelA1.table)
-    dbClose()
+    channelD2 = Channel(readUrlD2, writeUrl, readKeyD2, writeKeyD2, idD2, tableD2, argD2, sizeD2, nameD2)
+    Channel.createFieldLists(channelD2)
     
+    #DEBUG testing
+    if debugFlag:
+        debug(channelA1)
+        debug(channelB1)
+        debug(channelC1)
+        debug(channelD2)
+        try:
+            userChannel = checkChannelInput("Enter A, B, or D to select a channel: ")
+        except:
+            print("could not check input")
+        
+        checkEntryInput("Enter entry number to search for: ", userChannel)        
     
-    try:
-        userChannel = checkChannelInput("Enter A, B, C, or D to select a channel: ")
+    try:          
+        temp = Thread(target=RPI4_Temp.main, daemon = False)
+        temp.start()
     except:
-        print("could not check input")
+        print("sense hat error")
     
-    checkEntryInput("Enter entry number to search for: ", userChannel)
+    #RPI4_Final.main(85, False, 1, 1) reminder for format when using RPI4_Final
+    
+    #setup email notifications
+    email_obj = emailAlert.EmailNotification()
+    recipient = RPI4_GUI3.get_email_input()
+    subject = "WARNING: High Temperature"
+    message = "The current temperature in the house exceeds the set threshold. User action is required."
+    #email_obj.notifyUser(recipient, subject, message)
+    
+    while True:
+        print("radio select value: ", RPI4_GUI3.radio_select_value())
+        print("threshold value: ", RPI4_GUI3.get_input())
+        print("manual light status: ", RPI4_GUI3.radio_preference_value_light())
+        print("manual blind status: ", RPI4_GUI3.radio_preference_value_blind())
+        
+        RPI4_Final.main(RPI4_GUI3.get_input(), RPI4_GUI3.radio_select_value(), RPI4_GUI3.radio_preference_value_light(), RPI4_GUI3.radio_preference_value_blind())
+            
+        Channel.createFieldLists(channelA1)
+        Channel.createFieldLists(channelB1)
+        Channel.createFieldLists(channelC1)
+        Channel.createFieldLists(channelD2)
+        update(channelA1)
+        update(channelB1)
+        update(channelC1)
+        update(channelD2)
+        email_update(email_obj, recipient, subject, message, channelB1)
+        print("---------------------------------------------------")
+        sleep(4)
+    dbClose() #this line won't be reached but it's a good reminder to close files
