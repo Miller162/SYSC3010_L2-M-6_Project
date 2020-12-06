@@ -140,6 +140,8 @@ def checkHighestEntry(channel):
 #Insert data into databasr tables
 def insertData(dataList, channel, tableSize):
     #print("DEBUG: tableSize: ", tableSize)
+    if tableSize == 3:
+        cursor.execute("INSERT INTO %s %s" %(channel.table, channel.arguments), (dataList[0], dataList[1], dataList[2]))    
     if tableSize == 4:
         cursor.execute("INSERT INTO %s %s" %(channel.table, channel.arguments), (dataList[0], dataList[1], dataList[2], dataList[3]))    
     if tableSize == 5:
@@ -410,5 +412,5 @@ if __name__ == "__main__":
         update(channelD2)
         email_update(email_obj, recipient, channelB1)
         print("---------------------------------------------------")
-        sleep(4)
+        sleep(1)
     dbClose() #this line won't be reached but it's a good reminder to close files
