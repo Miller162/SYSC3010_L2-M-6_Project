@@ -263,7 +263,7 @@ def debug(channel):
 class Channel:
     #constructor method
     def __init__(self, readUrl, writeUrl, readApiKey, writeApiKey, cid, table, arguments, tableSize, name):
-        self.readUrl = readUrl + readApiKey
+        self.readUrl = readUrl + readApiKey + "&results=8000"
         self.writeUrl = writeUrl + writeApiKey
         self.readApiKey = readApiKey
         self.writeApiKey = writeApiKey
