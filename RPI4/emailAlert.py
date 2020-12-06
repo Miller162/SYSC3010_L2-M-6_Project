@@ -26,8 +26,9 @@ class EmailNotification:
 
 # The following code tests the email notifcation system
 # This is one example of its implementation
-email = EmailNotification()
-recipient = 'hemas.assistant@gmail.com'
-subject = "WARNING: High Temperature"
-message = "The current temperature in the house exceeds the set threshold. User action is required."
-email.notifyUser(recipient, subject, message)
+if __name__ == "__main__":
+    email = EmailNotification()
+    recipient = 'hemas.assistant@gmail.com'
+    subject = "WARNING: High Temperature"
+    message = "The current temperature in the house exceeds the set threshold. User action is required."
+    email.notifyUser(recipient, subject, message)
