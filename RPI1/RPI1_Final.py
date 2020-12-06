@@ -427,7 +427,7 @@ if __name__ == '__main__':
             check_light(light_status)
             check_blinds(blinds_status, motor_lock)
 
-            sleep(4)
+            sleep(1.5)
         #END WHILE
     except:
         debug("Catastophic system error. Shutting down")
