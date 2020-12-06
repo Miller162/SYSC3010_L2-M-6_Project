@@ -3,9 +3,7 @@
 This document provides an outline for the GitHub, and for how to set up the Household Environment Monitoring Automation System (H.E.M.A.S.).
 
 GitHub: 
-	The GitHub has two (2) active branches: main, and final.  The main branch consists of all the testing and prototyping code, while the final branch contains only the code used in the final system implementation. Some tests are outdated and should no longer be used; specifically the tests for RPI4 channels.
-
-	The branches have several folders that specify which Raspberry Pi they are intended for use on, according to the architecture UML diagram used in all project reports.  
+	The GitHub has two (2) active branches: main, and final.  The main branch consists of all the testing and prototyping code, while the final branch contains only the code used in the final system implementation. Some tests are outdated and should no longer be used; specifically the tests for RPI4 channels.  The branches have several folders that specify which Raspberry Pi they are intended for use on, according to the architecture UML diagram used in all project reports.  
 
 RPI1: 
 	For usage of this code on the Raspberry Pi, download all files from the final branch.  All code must be in the same folder directory on the Raspberry Pi.  Before running the code, ensure that all hardware is connected to the appropriate GPIO ports on the Raspberry Pi, and that all necessary libraries have been installed.  For a list of necessary libraries please see the Imports section of RPI1_Final.py.  
