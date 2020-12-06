@@ -88,4 +88,4 @@ while (1):
     pixels = [red if i < humidity else blue for i in range(64)]   #Sets up an LED matrix display dependent on the humidity value
     sense.set_pixels(pixels)
 
-    sleep(1) # This is a buffer that allows for easy control over the frequency of our data collection. At this moment it is set-up to run the while-loop again after one second.
+    sleep(1.5) # This is a buffer that allows for easy control over the frequency of our data collection. At this moment it is set-up to run the while-loop again after one second.
