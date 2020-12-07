@@ -230,7 +230,10 @@ def email_update(email_obj, recipient, channel):
         temp_str = row["temperature"]
         highestRecord1 = int(row["tsid"])
     print("Current temp: ", temp_str)
-    temp = int(temp_str)
+    try:
+        temp = int(temp_str)
+    except:
+        temp = 0
     if temp >= 30 and highestRecord1 > emailFlagValue1:
         emailFlagValue1 = highestRecord1
         email_obj.notifyUser(recipient, subject_temp, message_temp)
