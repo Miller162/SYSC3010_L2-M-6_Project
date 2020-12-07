@@ -412,5 +412,5 @@ if __name__ == "__main__":
         update(channelD2)
         email_update(email_obj, recipient, channelB1)
         print("---------------------------------------------------")
-        sleep(1)
+        sleep(4)
     dbClose() #this line won't be reached but it's a good reminder to close files
