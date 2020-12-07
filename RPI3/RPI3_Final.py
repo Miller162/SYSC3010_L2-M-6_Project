@@ -29,8 +29,8 @@ def testing():
 #Anemometer
     
 rotations=0# counts the number of rotations from the anemoemter 
-radius_km=0.0001425 # the radius of the anemoemeter used to determine the speed 
-interval=10 # the time in seconds of how often the readings are outputted
+radius_cm=14.25 # the radius of the anemoemeter used to determine the speed 
+interval=5 # the time in seconds of how often the readings are outputted
 wind_speed=0 # the initial speed of the wind set to 0
 
 #Wind Vane
@@ -43,7 +43,7 @@ West_direction=Button(10)#West Direction is connected to the sensor using GPIO p
 Northwest_direction=Button(11)#North West Direction is connected to the sensor using GPIO pin 11
 SouthWest_direction=Button(22)#South West Direction is connected to the sensor using GPIO pin 22
 NorthEast_direction=Button(3)#North East Direction is connected to the sensor using GPIO pin 3
-SouthEast_direction=Button(17)#South East Direction is connected to the sensor using GPIO pin 17
+SouthEast_direction=Button(14)#South East Direction is connected to the sensor using GPIO pin 17
 
 # Wind Vane: Determine direction wind is flowing in
 # The following block of code is run to see which sensor is currently active and assigns the assigned direction.
@@ -96,16 +96,19 @@ def spin():
     print("Rotation"+str(rotations))#prints the number of spin outputs
     
 #Converts the number of rotations into speed in km per hour
-def calculate_speed(time_hours):
+def calculate_speed(time_seconds):
     global rotations
-    circumference_km=(2*math.pi)*radius_km
+    circumference_cm=(2*math.pi)*radius_cm
     rotations=rotations
     
-    dist_km=circumference_km*rotations
-    speed=dist_km/time_hours
-    return speed
+    dist_cm=circumference_cm*rotations
+    speed=dist_cm/time_seconds
+    #The code below converts the speed from cm/sec to km/h
+    distance_km=(circumference_cm*rotations)/100000
+    km_per_hour=(distance_km/time_seconds)*3600
+    return km_per_hour
 
-wind_speed_sensor=Button(14) #Hall effect sensor indicating the number of rotations
+wind_speed_sensor=Button(17) #Hall effect sensor indicating the number of rotations
 wind_speed_sensor.when_pressed=spin#When the sensor is triggered it triggers the spin function
 
 #This code wrties the data collected from the anemometer and the wind vane to thingspeak 
