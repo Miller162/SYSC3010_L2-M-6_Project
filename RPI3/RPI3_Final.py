@@ -30,7 +30,7 @@ def testing():
     
 rotations=0# counts the number of rotations from the anemoemter 
 radius_cm=14.25 # the radius of the anemoemeter used to determine the speed 
-interval=1 # the time in seconds of how often the readings are outputted
+interval=4 # the time in seconds of how often the readings are outputted
 wind_speed=0 # the initial speed of the wind set to 0
 anemoemter_factor=3.432#anemometer factor that takes into account the legs and added weight of the anemometer
 
@@ -131,7 +131,6 @@ while True:
     print(wind_speed, "km/h")#print the wind speed
     wind_direction=direction()
     print(direction())#print the current direction
-    #time.sleep(1)#update every 1 second 
     write_to_thingspeak(wind_speed,wind_direction)#write to thingspeak
     
     

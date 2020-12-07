@@ -17,11 +17,11 @@ try:
             North_direction=Button(2)
             North_East_direction=Button(3)
             East_direction=Button(4)
-            South_East_direction=Button(17)
+            South_East_direction=Button(14)
             South_direction=Button(27)
             South_West_direction=Button(22)
             West_direction=Button(10)
-            North_West_direction=Button(9)
+            North_West_direction=Button(11)
            
 except:
     print("Input error")
