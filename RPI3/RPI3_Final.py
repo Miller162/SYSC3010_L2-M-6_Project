@@ -30,8 +30,9 @@ def testing():
     
 rotations=0# counts the number of rotations from the anemoemter 
 radius_cm=14.25 # the radius of the anemoemeter used to determine the speed 
-interval=5 # the time in seconds of how often the readings are outputted
+interval=60 # the time in seconds of how often the readings are outputted
 wind_speed=0 # the initial speed of the wind set to 0
+anemoemter_facotr=3.432#anemometer factor that takes into account the legs and added weight of the anemometer
 
 #Wind Vane
 
@@ -106,7 +107,7 @@ def calculate_speed(time_seconds):
     #The code below converts the speed from cm/sec to km/h
     distance_km=(circumference_cm*rotations)/100000
     km_per_hour=(distance_km/time_seconds)*3600
-    return km_per_hour
+    return km_per_hour*anemometer_factor
 
 wind_speed_sensor=Button(17) #Hall effect sensor indicating the number of rotations
 wind_speed_sensor.when_pressed=spin#When the sensor is triggered it triggers the spin function
